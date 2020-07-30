@@ -110,4 +110,136 @@ Color theme can be set on line 16. See https://sourcethemes.com/academic/themes/
 
 A detailed description of building menus can be found here: https://gohugo.io/content-management/menus/
 
-The main thing to remember is how URL linking works. If you provide `url = "#somesection"`, the menu will link to the named section on the current page (`www.baseurl.com#somesection`). If you provide `url = "somesection"`, it will instead take you to an entirely new page (`www.baseurl.com/somesection`) See **Project Hash** vs **Project Slash** to get a better sense of what this means. 
+The main thing to remember is how URL linking works. If you provide `url = "#somesection"`, the menu will link to the named section on the **current** page (`www.baseurl.com#somesection`). If you provide `url = "somesection"`, it will instead take you to an entirely **new** page (`www.baseurl.com/somesection`) See **Project Hash** vs **Project Slash** to get a better sense of what this means. 
+
+# Part 2
+
+Here we will cover the basics of getting your website up and running on [GitHub pages](https://pages.github.com). Note that there is a competing service called [Netlify](https://www.netlify.com), which supposedly have better support for Hugo-based websites, but I haven't used it. Plus, you already have a github account, so you might as well take advantage of the website it grants you!
+
+We will (mostly) be following along with this walkthrough: https://gohugo.io/hosting-and-deployment/hosting-on-github/
+
+## Create Github Repos
+
+You will actually need to make *two* repos to get your site up and running. The first one will be a private repo where you will develop changes to your site before it is ready to publish. The second one will be the static site iteself -- which is actually the contents of the `public/` directory. 
+
+### The (private) deveopment repo (`blog`)
+
+First, on github, make yourself a private repo. You can all it anything. I called mine **`blog`**, so that is the name I will use here. 
+
+### The github pages repo (`<USERNAME>.github.io`)
+
+Next, make a public repo. This one *needs* to be called `<USERNAME>.github.io` -- where *<USERNAME>* is, you know, your actualy GitHub user name. 
+
+
+
+## Clone development (`blog`) repo
+
+Several of these steps will be easier on the command line. I am assuming you are using bash or zsch -- you can tell a command should be executed at the command line (rather than in R) because it will start with `$`. If you aren't using Mac or Linux, these commands may not work 100% as-is. 
+
+First, clone the `blog` repo. Yuo can use Rstudio to create a new project for it, as you did with this `blogdown-template` repo. 
+
+You could also do this at the command line with: 
+```{bash}
+$ cd ~
+$ git clone https://github.com/<USERNAME>/blog.git
+```
+
+## Copy your WIP site to `blog`
+
+Now, you need to just copy the full contents of this  `blogdown-template/` directory over to your new `blog/` directory. The easiest way to do this is probably to use the command line, similar to this: 
+
+```{bash}
+$ cp -r blogdown-template/* blog/
+$ rm blog/blogdown-template.Rproj        ## don't need this file
+$ rm -rf blog/public                     ## don't need this dir
+$ cp  blogdown-template/.gitignore blog/ ## hidden file we need
+$ cp blogdown-template/.Rprofile blog/   ## hidden file we need
+```
+
+This assumes that `blogdown-template/` and `blog/` are both living in the same directory. If they aren't, you will need to adjust the paths accordingly. 
+
+## Create submodule for github pages site (`<USERNAME>.github.io`) in `blog/public/`
+
+As far as I'm aware, this last part *needs* to be run at the command line (I have no idea how to do it in Rstudio)
+
+```{bash}
+$ cd blog/
+$ git submodule add -b master https://github.com/<USERNAME>/<USERNAME>.github.io.git public
+```
+
+## Last few things 
+
+You need set the correct url in the `blog/config.toml`
+```{yaml}
+baseurl = "<USERNAME>.github.io"
+```
+
+## Build and push
+
+Build your site. There are two options. 
+
+1) `blogdown::serve_site()` will create a copy of the site in `blog/public/`, and serve it
+2) `blogdown::hugo_build()` will just create a copy of the site to `blog/public`. This is faster, but you don't get to preview your changes
+
+Now to push. Things are a little complicated here, because you have both the development repo `blog/`. When you push changes to it, these are backed up to github, *but they are not refelcted on your actual site*. To do that, you also need to push the changes to the `blog/public` directory, which is, remember synced up to the `<USERNAME>.github.io` repo. 
+
+```{bash}
+$ cd blog/public/
+$ git pull
+$ git add *
+$ git commit -m "update the site"
+$ git push
+```
+
+Now wait a minte and go to https://<USERNAME>.github.io, and your site should be there!
+
+
+
+## **Bonus**: Custom Colors and Fonts
+
+While academic has severl built-in themes, you can make your site more uniqe by customizing the colors and fonts that it uses. 
+
+Create the following files from these templates, customizing the paramaters to your liking:
+
+**`blog/data/fonts/my_theme.toml`**
+```{yaml}
+# Font style metadata
+name = "My-Theme"
+
+# Optional Google font URL
+google_fonts = "Nunito:400,700|Raleway:400,400italic,700|Roboto+Mono|"
+
+# Font families
+heading_font = "Nunito"
+body_font = "Raleway"
+nav_font = "Raleway"
+mono_font = "Roboto Mono"
+```
+
+**`blog/data/theme/my_theme.toml`**
+```{yaml}
+
+# Theme metadata
+name = "My-Theme"
+
+# Is theme light or dark?
+light = true
+
+# Primary
+primary = "#FFFFFF"
+
+# Menu
+menu_primary = "#FFFFFF"
+menu_text = "#FFFFFF"
+menu_text_active = "#FFFFFF"
+menu_title = "#FFFFFF"
+
+# Home sections
+home_section_odd = "rgb(255, 255, 255)"
+home_section_even = "rgb(250, 250, 250)"
+```
+
+Then change line 12 of `blog/config/_default/params.toml` to read:
+```{yaml}
+theme = "my_theme"
+```
